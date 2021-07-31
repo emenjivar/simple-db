@@ -1,0 +1,7 @@
+# ignore compilated files (without extension)
+*
+!/**/
+!*.*
+
+# ignore vscode configuration folder
+.vscode/
