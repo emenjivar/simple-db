@@ -65,4 +65,23 @@ describe 'database' do
     result = run_script(script)
     expect(result[-2]).to eq('db > Error: Table full.')
   end
+
+  it 'verify when string are the maximun length' do
+    long_username = "a"*32
+    long_email = "a"*255
+
+    result = run_script([
+      "insert 1 #{long_username} #{long_email}",
+      "select",
+      ".exit"
+    ])
+
+    expect(result).to match_array([
+      "Executed.",
+      "db > (1, #{long_username}, #{long_email})",
+      "1 rows printed.",
+      "db > Executed.",
+      "db > bye"
+    ])
+  end
 end
