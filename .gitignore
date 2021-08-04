@@ -5,3 +5,7 @@
 
 # ignore vscode configuration folder
 .vscode/
+
+# not ignore ruby files
+!Gemfile
+!Rakefile
