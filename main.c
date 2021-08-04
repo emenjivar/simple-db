@@ -26,6 +26,7 @@ typedef enum {
 typedef enum { 
     PREPARE_SUCCESS,
     PREPARE_SYNTAX_ERROR,
+    PREPARE_STRING_TO_LONG,
     PREPARE_UNRECOGNIZED_STATEMENT
 } PrepareResult;
 
@@ -77,6 +78,7 @@ void read_input(InputBuffer *);
 void print_prompt();
 void destroy_input_buffer(InputBuffer *);
 MetaCommandResult do_meta_command(InputBuffer *, Table *);
+PrepareResult prepare_insert(InputBuffer *, Statement *);
 PrepareResult prepare_statement(InputBuffer *, Statement *);
 ExecuteResult execute_insert(Statement *, Table *);
 ExecuteResult execute_select(Statement *, Table *);
@@ -117,6 +119,9 @@ int main(int argc, char* argv[]) {
                 break;
             case PREPARE_SYNTAX_ERROR:
                 printf("Syntax error. Could not parse statement.\n");
+                continue;
+            case PREPARE_STRING_TO_LONG:
+                printf("String to long.\n");
                 continue;
             case PREPARE_UNRECOGNIZED_STATEMENT:
                 printf("%s: unrecognized keyword\n", input->buffer);
@@ -176,24 +181,42 @@ MetaCommandResult do_meta_command(InputBuffer *input,Table *table) {
     }
 }
 
+PrepareResult prepare_insert(InputBuffer *input, Statement *statement) {
+    statement->type = STATEMENT_INSERT;
+
+    char *keyword = strtok(input->buffer, " ");
+    char *sid = strtok(NULL, " ");
+    char *username = strtok(NULL, " ");
+    char *email = strtok(NULL, " ");
+
+    if(sid == NULL || username == NULL || email == NULL) {
+        return PREPARE_SYNTAX_ERROR;
+    }
+
+    int id = atoi(sid);
+
+    //validate max lenght of strings
+    if(strlen(username) > COLUMN_USERNAME_SIZE) {
+        return PREPARE_STRING_TO_LONG;
+    }
+
+    if(strlen(email) > COLUMN_EMAIL_SIZE) {
+        return PREPARE_STRING_TO_LONG;
+    }
+    //end of validations
+
+    statement->row.id = id;
+    strcpy(statement->row.username, username);
+    strcpy(statement->row.email, email);
+
+    return PREPARE_SUCCESS;
+}
 /**
  * Before execute SQL statement, parse input command 
  */
 PrepareResult prepare_statement(InputBuffer *input, Statement *statement) {
     if(strncmp(input->buffer, "insert", 6) == 0) {
-        statement->type = STATEMENT_INSERT;
-
-        int args_assigned = sscanf(
-            input->buffer, 
-            "insert %d %s %s", 
-            &(statement->row.id), statement->row.username, statement->row.email
-        );
-
-        if(args_assigned < 3) {
-            return PREPARE_SYNTAX_ERROR;
-        }
-
-        return PREPARE_SUCCESS;
+        return prepare_insert(input, statement);
     }
     if(strcmp(input->buffer, "select") == 0) {
         statement->type = STATEMENT_SELECT;
