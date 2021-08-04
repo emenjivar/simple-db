@@ -27,6 +27,7 @@ typedef enum {
     PREPARE_SUCCESS,
     PREPARE_SYNTAX_ERROR,
     PREPARE_STRING_TO_LONG,
+    PREPARE_NEGATIVE_ID,
     PREPARE_UNRECOGNIZED_STATEMENT
 } PrepareResult;
 
@@ -123,6 +124,9 @@ int main(int argc, char* argv[]) {
             case PREPARE_STRING_TO_LONG:
                 printf("String to long.\n");
                 continue;
+            case PREPARE_NEGATIVE_ID:
+                printf("ID must be positive.\n");
+                continue;
             case PREPARE_UNRECOGNIZED_STATEMENT:
                 printf("%s: unrecognized keyword\n", input->buffer);
                 continue; // Move from the begining of loop
@@ -172,7 +176,7 @@ void destroy_input_buffer(InputBuffer *input) {
 
 MetaCommandResult do_meta_command(InputBuffer *input,Table *table) {
     if(strcmp(input->buffer, ".exit") == 0) {
-        printf("bye\n");
+        printf("Bye.\n");
         destroy_input_buffer(input);
         free_table(table);
         exit(EXIT_SUCCESS);
@@ -195,7 +199,11 @@ PrepareResult prepare_insert(InputBuffer *input, Statement *statement) {
 
     int id = atoi(sid);
 
-    //validate max lenght of strings
+    //validattions
+    if(id <= 0) {
+        return PREPARE_NEGATIVE_ID; 
+    }
+
     if(strlen(username) > COLUMN_USERNAME_SIZE) {
         return PREPARE_STRING_TO_LONG;
     }

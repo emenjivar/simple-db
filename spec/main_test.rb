@@ -19,7 +19,7 @@ describe 'database' do
       ".exit",
     ])
     expect(result).to match_array([
-      "db > bye",
+      "db > Bye.",
     ])
   end
 
@@ -31,7 +31,7 @@ describe 'database' do
     expect(result).to match_array([
       "db > Empty table.",
       "Executed.",
-      "db > bye"
+      "db > Bye."
     ])
   end
 
@@ -46,7 +46,7 @@ describe 'database' do
       "db > (1, user_1, user_1@gmail.com)",
       "1 rows printed.",
       "db > Executed.",
-      "db > bye"
+      "db > Bye."
     ])
   end
 
@@ -81,7 +81,7 @@ describe 'database' do
       "db > (1, #{long_username}, #{long_email})",
       "1 rows printed.",
       "db > Executed.",
-      "db > bye"
+      "db > Bye."
     ])
   end
 
@@ -99,7 +99,22 @@ describe 'database' do
       "db > String to long.",
       "db > Empty table.",
       "Executed.",
-      "db > bye"
+      "db > Bye."
+    ])
+  end
+
+  it 'verify when id is negative' do
+    result = run_script([
+      "insert -1 user user@gmail.com",
+      "select",
+      ".exit"
+    ]);
+
+    expect(result).to match_array([
+      "db > ID must be positive.",
+      "db > Empty table.",
+      "Executed.",
+      "db > Bye."
     ])
   end
 end
