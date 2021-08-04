@@ -22,4 +22,16 @@ describe 'database' do
       "db > bye",
     ])
   end
+
+  it 'select from empty table' do
+    result = run_script([
+      "select",
+      ".exit"
+    ])
+    expect(result).to match_array([
+      "Executed.",
+      "db > Empty table.",
+      "db > bye"
+    ])
+  end
 end
