@@ -1,7 +1,15 @@
 describe 'database' do
-  def run_script(commands) 
+  before do 
+    `rm -rf db/__ruby_db_*`
+  end
+
+  after do 
+    `rm -rf db/__ruby_db_*`
+  end
+
+  def run_script(db_name, commands) 
     raw_output = nil
-    IO.popen("./main", "r+") do |pipe|
+    IO.popen("./main __ruby_db_#{db_name}", "r+") do |pipe|
       commands.each do |command|
         pipe.puts command
       end
@@ -15,7 +23,7 @@ describe 'database' do
   end
 
   it 'exit from database' do
-    result = run_script([
+    result = run_script("test_exit", [
       ".exit",
     ])
     expect(result).to match_array([
@@ -24,7 +32,7 @@ describe 'database' do
   end
 
   it 'select from empty table' do
-    result = run_script([
+    result = run_script("test_empty_table", [
       "select",
       ".exit"
     ])
@@ -36,7 +44,7 @@ describe 'database' do
   end
 
   it 'insert and retrieve a single row' do 
-    result = run_script([
+    result = run_script("test_insert_select", [
       "insert 1 user_1 user_1@gmail.com",
       "select",
       ".exit"
@@ -62,7 +70,7 @@ describe 'database' do
       "insert #{i} user#{i} user#{i}@example.com"
     end
     script << ".exit"
-    result = run_script(script)
+    result = run_script("test_table_full", script)
     expect(result[-2]).to eq('db > Error: Table full.')
   end
 
@@ -70,7 +78,7 @@ describe 'database' do
     long_username = "a"*32
     long_email = "a"*255
 
-    result = run_script([
+    result = run_script("test_max_length", [
       "insert 1 #{long_username} #{long_email}",
       "select",
       ".exit"
@@ -89,7 +97,7 @@ describe 'database' do
     long_username = "a"*33
     long_email = "a"*256
 
-    result = run_script([
+    result = run_script("test_string_too_long", [
       "insert 1 #{long_username} #{long_email}",
       "select",
       ".exit"
@@ -104,7 +112,7 @@ describe 'database' do
   end
 
   it 'verify when id is negative' do
-    result = run_script([
+    result = run_script("test_negative_id", [
       "insert -1 user user@gmail.com",
       "select",
       ".exit"
@@ -113,6 +121,48 @@ describe 'database' do
     expect(result).to match_array([
       "db > ID must be positive.",
       "db > Empty table.",
+      "Executed.",
+      "db > Bye."
+    ])
+  end
+
+  it 'verify invalid database name' do 
+    result = run_script("../test_invalid_db_name",[]);
+    result.push(run_script("/",[])[0]);
+    result.push(run_script("#",[])[0]);
+    result.push(run_script("=",[])[0]);
+    result.push(run_script("db.exe",[])[0]);
+
+    expect(result).to match_array([
+      "Invalid database name.",
+      "Invalid database name.",
+      "Invalid database name.",
+      "Invalid database name.",
+      "Invalid database name."
+    ])
+  end
+
+  it 'verify when data is saved after closing connection' do
+    db_name = "test_saved_data"
+
+    result_one = run_script(db_name, [
+      "insert 1 user user@gmail.com",
+      ".exit"
+    ])
+
+    expect(result_one).to match_array([
+      "db > Executed.",
+      "db > Bye."
+    ])
+
+    result_two = run_script(db_name, [
+      "select",
+      ".exit"
+    ])
+
+    expect(result_two).to match_array([
+      "db > (1, user, user@gmail.com)",
+      "1 rows printed.",
       "Executed.",
       "db > Bye."
     ])
